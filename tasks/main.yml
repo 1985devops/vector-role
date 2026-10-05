@@ -1,0 +1,19 @@
+---
+- name: Get Vector deb package
+  ansible.builtin.get_url:
+    url: "https://timber.io{{ vector_version }}/vector_{{ vector_version }}-1_amd64.deb"
+    dest: "/tmp/vector_{{ vector_version }}-1_amd64.deb"
+    mode: '0644'
+
+- name: Install Vector package
+  ansible.builtin.apt:
+    deb: "/tmp/vector_{{ vector_version }}-1_amd64.deb"
+  become: true
+
+- name: Configure Vector
+  ansible.builtin.template:
+    src: vector.toml.j2
+    dest: /etc/vector/vector.toml
+    mode: '0644'
+  become: true
+  notify: Restart Vector
