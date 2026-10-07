@@ -1,0 +1,53 @@
+---
+- name: Infrastructure Setup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Start Ubuntu Test Container
+      community.docker.docker_container:
+        name: ubuntulatest
+        image: ubuntu:latest
+        state: started
+        command: sleep infinity
+        privileged: true
+
+    - name: Start OracleLinux Test Container
+      community.docker.docker_container:
+        name: oraclelinux8
+        image: oraclelinux:8
+        state: started
+        command: /sbin/init
+        privileged: true
+        volumes:
+          - /sys/fs/cgroup:/sys/fs/cgroup:ro
+
+    - name: Add containers to runtime inventory
+      ansible.builtin.add_host:
+        name: "{{ item }}"
+        ansible_connection: docker
+        ansible_user: root
+      loop:
+        - ubuntulatest
+        - oraclelinux8
+
+- name: Run Vector Role Verification
+  hosts: ubuntulatest,oraclelinux8
+  gather_facts: false
+  vars:
+    vector_version: "0.34.0"
+  
+  pre_tasks:
+    - name: Install Python 3 inside containers if missing
+      ansible.builtin.raw: |
+        if command -v apt-get >/dev/null; then
+          apt-get update && apt-get install -y python3;
+        elif command -v dnf >/dev/null; then
+          dnf install -y python3 || yum install -y python3;
+        fi
+      changed_when: false
+
+  tasks:
+    - name: Include vector-role
+      ansible.builtin.include_role:
+        name: /home/alex/netology-ansible-roles/vector-role

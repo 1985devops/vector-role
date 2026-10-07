@@ -1,0 +1,26 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if Vector binary exists
+      ansible.builtin.stat:
+        path: /usr/bin/vector
+      register: vector_bin
+
+    - name: Assert Vector is installed
+      ansible.builtin.assert:
+        that:
+          - vector_bin.stat.exists
+        fail_msg: "Бинарный файл Vector не найден!"
+
+    - name: Check if Vector config exists
+      ansible.builtin.stat:
+        path: /etc/vector/vector.yaml
+      register: vector_config
+
+    - name: Assert config file exists
+      ansible.builtin.assert:
+        that:
+          - vector_config.stat.exists
+        fail_msg: "Конфигурационный файл Vector отсутствует!"
